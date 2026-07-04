@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-indigo-50: #fff5f5;
+  --color-indigo-100: #ffe3e3;
+  --color-indigo-200: #ffc9c9;
+  --color-indigo-300: #ffa8a8;
+  --color-indigo-450: #ff6b6b; /* Custom midpoint for gradients */
+  --color-indigo-400: #ff8787;
+  --color-indigo-500: #e03131; /* Primary Crimson */
+  --color-indigo-650: #ff4d4d;
+  --color-indigo-600: #c92a2a;
+  --color-indigo-700: #a61d1d;
+  --color-indigo-800: #212529; /* Dark graphite elements */
+  --color-indigo-900: #121416;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200 font-sans antialiased;
+  }
+}
+
+/* Custom Scrollbar for modern look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Custom gauge progress chart animations */
+@keyframes progress {
+  0% {
+    stroke-dasharray: 0 100;
+  }
+}
+
+.animate-progress {
+  animation: progress 1s ease-out forwards;
+}
