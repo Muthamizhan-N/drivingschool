@@ -15,7 +15,10 @@ from .serializers import (
     AttendanceSerializer, AnnouncementSerializer, PaymentSerializer
 )
 
-# Helper function to mock SMS, WhatsApp, and Email notifications
+from django.core.mail import send_mail
+from django.conf import settings
+
+# Helper function to mock SMS, WhatsApp, and send real Email notifications
 def send_mock_notification(student_name, phone, email, title, message):
     print("\n" + "="*60)
     print(f"[MOCK NOTIFICATION] DISPATCHING FOR: {student_name}")
@@ -31,11 +34,28 @@ def send_mock_notification(student_name, phone, email, title, message):
     print(f"   *{title}*\n   {message}")
     print("-" * 40)
     
-    # 3. Email Dispatch Simulation
-    print(f"[Email] Sent to {email}:")
+    # 3. Email Dispatch Simulation & Real Email Attempt
+    print(f"[Email Log] Sent to {email}:")
     print(f"   Subject: {title}")
-    print(f"   Body: Dear {student_name},\n\n   {message}\n\n   Best Regards,\n   Driving School Administration")
+    print(f"   Body: Dear {student_name},\n\n   {message}")
     print("="*60 + "\n")
+
+    # Attempt to send a real email if SMTP is configured
+    try:
+        subject = title
+        email_body = f"Dear {student_name},\n\n{message}\n\nBest Regards,\nDriving School Administration"
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@example.com')
+        send_mail(
+            subject,
+            email_body,
+            from_email,
+            [email],
+            fail_silently=False,
+        )
+        print(f"[LIVE EMAIL] Successfully sent email to {email}!")
+    except Exception as e:
+        print(f"[LIVE EMAIL] Real email not sent (SMTP not configured or offline): {e}")
+
 
 class CustomObtainAuthToken(ObtainAuthToken):
     permission_classes = [permissions.AllowAny]
