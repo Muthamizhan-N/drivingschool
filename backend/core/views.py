@@ -15,10 +15,37 @@ from .serializers import (
     AttendanceSerializer, AnnouncementSerializer, PaymentSerializer
 )
 
+import threading
 from django.core.mail import send_mail
 from django.conf import settings
 
-# Helper function to mock SMS, WhatsApp, and send real Email/SMS notifications
+def send_email_background(subject, email_body, from_email, recipient):
+    try:
+        send_mail(
+            subject,
+            email_body,
+            from_email,
+            [recipient],
+            fail_silently=False,
+        )
+        print(f"[LIVE EMAIL] Successfully sent email to {recipient}!")
+    except Exception as e:
+        print(f"[LIVE EMAIL] Real email not sent (SMTP not configured or offline): {e}")
+
+def send_twilio_sms_background(twilio_sid, twilio_token, twilio_phone, to_phone, body):
+    try:
+        from twilio.rest import Client
+        twilio_client = Client(twilio_sid, twilio_token)
+        twilio_client.messages.create(
+            body=body,
+            from_=twilio_phone,
+            to=to_phone
+        )
+        print(f"[LIVE SMS] Successfully sent SMS to {to_phone}!")
+    except Exception as e:
+        print(f"[LIVE SMS] Real SMS not sent: {e}")
+
+# Helper function to mock SMS, WhatsApp, and send real Email/SMS notifications in background threads
 def send_mock_notification(student_name, phone, email, title, message):
     print("\n" + "="*60)
     print(f"[MOCK NOTIFICATION] DISPATCHING FOR: {student_name}")
@@ -40,41 +67,34 @@ def send_mock_notification(student_name, phone, email, title, message):
     print(f"   Body: Dear {student_name},\n\n   {message}")
     print("="*60 + "\n")
 
-    # Attempt to send a real SMS if Twilio is configured
+    # Attempt to send a real SMS in a background thread if Twilio is configured
     twilio_sid = getattr(settings, 'TWILIO_ACCOUNT_SID', '')
     twilio_token = getattr(settings, 'TWILIO_AUTH_TOKEN', '')
     twilio_phone = getattr(settings, 'TWILIO_PHONE_NUMBER', '')
 
     if twilio_sid and twilio_token and twilio_phone:
-        try:
-            from twilio.rest import Client
-            twilio_client = Client(twilio_sid, twilio_token)
-            twilio_client.messages.create(
-                body=f"{title}: {message}",
-                from_=twilio_phone,
-                to=phone
-            )
-            print(f"[LIVE SMS] Successfully sent SMS to {phone}!")
-        except Exception as e:
-            print(f"[LIVE SMS] Real SMS not sent: {e}")
+        sms_thread = threading.Thread(
+            target=send_twilio_sms_background,
+            args=(twilio_sid, twilio_token, twilio_phone, phone, f"{title}: {message}")
+        )
+        sms_thread.start()
     else:
         print("[LIVE SMS] Twilio credentials not set. Skipping real SMS dispatch.")
 
-    # Attempt to send a real email if SMTP is configured
+    # Attempt to send a real email in a background thread if SMTP is configured
     try:
         subject = title
         email_body = f"Dear {student_name},\n\n{message}\n\nBest Regards,\nDriving School Administration"
         from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@example.com')
-        send_mail(
-            subject,
-            email_body,
-            from_email,
-            [email],
-            fail_silently=False,
+        
+        email_thread = threading.Thread(
+            target=send_email_background,
+            args=(subject, email_body, from_email, email)
         )
-        print(f"[LIVE EMAIL] Successfully sent email to {email}!")
+        email_thread.start()
     except Exception as e:
-        print(f"[LIVE EMAIL] Real email not sent (SMTP not configured or offline): {e}")
+        print(f"[LIVE EMAIL] Failed to spawn background email thread: {e}")
+
 
 
 
