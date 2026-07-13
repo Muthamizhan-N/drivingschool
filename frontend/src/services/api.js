@@ -15,7 +15,9 @@ const client = axios.create({
 // Interceptor to add Token
 client.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) {
+  // Prevent sending the token on login or public registration endpoints to avoid token poisoning
+  const isAuthEndpoint = config.url && (config.url.endsWith('/login/') || config.url.endsWith('/register-public/'));
+  if (token && !isAuthEndpoint) {
     config.headers.Authorization = `Token ${token}`;
   }
   return config;
