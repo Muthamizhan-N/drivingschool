@@ -18,7 +18,7 @@ from .serializers import (
 from django.core.mail import send_mail
 from django.conf import settings
 
-# Helper function to mock SMS, WhatsApp, and send real Email notifications
+# Helper function to mock SMS, WhatsApp, and send real Email/SMS notifications
 def send_mock_notification(student_name, phone, email, title, message):
     print("\n" + "="*60)
     print(f"[MOCK NOTIFICATION] DISPATCHING FOR: {student_name}")
@@ -40,6 +40,26 @@ def send_mock_notification(student_name, phone, email, title, message):
     print(f"   Body: Dear {student_name},\n\n   {message}")
     print("="*60 + "\n")
 
+    # Attempt to send a real SMS if Twilio is configured
+    twilio_sid = getattr(settings, 'TWILIO_ACCOUNT_SID', '')
+    twilio_token = getattr(settings, 'TWILIO_AUTH_TOKEN', '')
+    twilio_phone = getattr(settings, 'TWILIO_PHONE_NUMBER', '')
+
+    if twilio_sid and twilio_token and twilio_phone:
+        try:
+            from twilio.rest import Client
+            twilio_client = Client(twilio_sid, twilio_token)
+            twilio_client.messages.create(
+                body=f"{title}: {message}",
+                from_=twilio_phone,
+                to=phone
+            )
+            print(f"[LIVE SMS] Successfully sent SMS to {phone}!")
+        except Exception as e:
+            print(f"[LIVE SMS] Real SMS not sent: {e}")
+    else:
+        print("[LIVE SMS] Twilio credentials not set. Skipping real SMS dispatch.")
+
     # Attempt to send a real email if SMTP is configured
     try:
         subject = title
@@ -55,6 +75,7 @@ def send_mock_notification(student_name, phone, email, title, message):
         print(f"[LIVE EMAIL] Successfully sent email to {email}!")
     except Exception as e:
         print(f"[LIVE EMAIL] Real email not sent (SMTP not configured or offline): {e}")
+
 
 
 class CustomObtainAuthToken(ObtainAuthToken):
