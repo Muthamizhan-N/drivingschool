@@ -33,17 +33,24 @@ def send_email_background(subject, email_body, from_email, recipient):
         print(f"[LIVE EMAIL] Real email not sent (SMTP not configured or offline): {e}")
 
 def send_twilio_sms_background(twilio_sid, twilio_token, twilio_phone, to_phone, body):
+    # Auto-clean and format local Indian numbers to international E.164
+    clean_phone = to_phone.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
+    if not clean_phone.startswith('+'):
+        if len(clean_phone) == 10 and clean_phone.isdigit():
+            clean_phone = f"+91{clean_phone}"
+
     try:
         from twilio.rest import Client
         twilio_client = Client(twilio_sid, twilio_token)
         twilio_client.messages.create(
             body=body,
             from_=twilio_phone,
-            to=to_phone
+            to=clean_phone
         )
-        print(f"[LIVE SMS] Successfully sent SMS to {to_phone}!")
+        print(f"[LIVE SMS] Successfully sent SMS to {clean_phone}!")
     except Exception as e:
-        print(f"[LIVE SMS] Real SMS not sent: {e}")
+        print(f"[LIVE SMS] Real SMS not sent to {clean_phone}: {e}")
+
 
 # Helper function to mock SMS, WhatsApp, and send real Email/SMS notifications in background threads
 def send_mock_notification(student_name, phone, email, title, message):
