@@ -55,6 +55,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcement
         fields = ('id', 'sender', 'sender_name', 'title', 'content', 'target_batch', 'target_batch_name', 'created_at')
+        read_only_fields = ('sender',)
 
     def get_sender_name(self, obj):
         return obj.sender.get_full_name() or obj.sender.username
