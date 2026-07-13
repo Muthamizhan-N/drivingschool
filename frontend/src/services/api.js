@@ -523,7 +523,11 @@ export const createAnnouncement = async (announcementData) => {
 
     return newAnn;
   }
-  const response = await client.post('/announcements/', announcementData);
+  const payload = {
+    ...announcementData,
+    target_batch: announcementData.target_batch ? parseInt(announcementData.target_batch) : null
+  };
+  const response = await client.post('/announcements/', payload);
   return response.data;
 };
 
